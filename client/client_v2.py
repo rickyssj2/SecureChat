@@ -42,7 +42,7 @@ async def chat_client(client_id):
                     isConnected = False
                     continue
                 isConnected = True                
-
+            # TODO: Re-structure code to enable chatting
             # Select target user
             if isConnected:
                 while True:
