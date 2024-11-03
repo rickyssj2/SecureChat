@@ -20,28 +20,40 @@ def init_db():
 
 init_db()
 
-# Store active clients
+def fetch_user_from_db(username, conn):
+    cursor = conn.cursor()
+    cursor.execute('SELECT username FROM users WHERE username = ?', (username,))
+    existing_user = cursor.fetchone()
+    return existing_user
+
+def insert_user_in_db(username, password, conn):
+    cursor = conn.cursor()
+    cursor.execute('SELECT username FROM users WHERE username = ?', (username,))
+    cursor.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (username, password))
+    conn.commit()
+# Store active clients & connected users
 active_clients = {}
+connected_users = {}
 
 async def register_user(websocket):
     registration_data = await websocket.recv()
     username, password = registration_data.split(',')
-    # TODO: move database connection and CRUD to a separate function
+
     conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT username FROM users WHERE username = ?', (username,))
-    existing_user = cursor.fetchone()
+    existing_user = fetch_user_from_db(username, conn)
 
     if existing_user:
         await websocket.send("Username already taken. Please try another one.")
     else:
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
-        cursor.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)', (username, password_hash))
-        conn.commit()
+        insert_user_in_db(username, password, conn)
         await websocket.send("Registration successful. You can now log in.")
     
     conn.close()
     return username  # Return the username for further actions
+
+def associate_user_with_client_id(username, client_id):
+    connected_users[username] = client_id
+    return
 
 async def authenticate(websocket):
     while True:
@@ -59,7 +71,7 @@ async def authenticate(websocket):
         row = cursor.fetchone()
         conn.close()
 
-        if row and hashlib.sha256(password.encode()).hexdigest() == row[0]:
+        if row and password == row[0]:
             await websocket.send("Authentication successful")
             return username
         else:
@@ -73,16 +85,19 @@ async def handle_client(websocket, path):
 
     # Authenticate user
     username = await authenticate(websocket)
+    # TODO: users can connect with multiple devices, change data structure
+    associate_user_with_client_id(username, client_id)
     print(f"{username} connected successfully!")
 
     try:
         while True:
             target_user = await websocket.recv()
-            if target_user in active_clients:
+            if target_user in connected_users:
                 # Send public keys
                 # TODO: server will not generate keys, only clients will
                 user_public_key = rsa.newkeys(512)[0].save_pkcs1(format='PEM')
-                target_websocket = active_clients[target_user]
+                target_client = connected_users[target_user]
+                target_websocket = active_clients[target_client]
 
                 await websocket.send(base64.b64encode(user_public_key).decode())
                 target_websocket.send(base64.b64encode(user_public_key).decode())
@@ -97,7 +112,7 @@ async def handle_client(websocket, path):
     except websockets.exceptions.ConnectionClosed:
         print(f"Client {client_id} disconnected.")
     finally:
-        del active_clients[client_id]
+        del connected_users[client_id]
 
 async def main():
     server = await websockets.serve(handle_client, "localhost", 6789)

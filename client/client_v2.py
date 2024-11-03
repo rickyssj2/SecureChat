@@ -16,9 +16,11 @@ async def chat_client(client_id):
             action = input("Type 'register' to create a new account or 'login' to access an existing one: ").strip().lower()
             if action == 'register':
                 await websocket.send("register")
-                while True:                    
-                    registration_data = input("Enter your username and password in the format: username,password: ")
-                    await websocket.send(registration_data)
+                while True:      
+                    username = input("Enter your username: ")
+                    password = input("Enter your password: ")
+                    password_hash = hashlib.sha256(password.encode()).hexdigest()
+                    await websocket.send(f"{username},{password_hash}")
                     response = await websocket.recv()
                     if response == "Username already taken. Please try another one.":
                         print(response)
@@ -30,7 +32,8 @@ async def chat_client(client_id):
             elif action == 'login':
                 username = input("Enter your username: ")
                 password = input("Enter your password: ")
-                await websocket.send(f"{username},{password}")
+                password_hash = hashlib.sha256(password.encode()).hexdigest()
+                await websocket.send(f"{username},{password_hash}")
                 auth_response = await websocket.recv()
                 print(auth_response)
 
