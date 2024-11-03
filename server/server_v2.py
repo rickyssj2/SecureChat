@@ -26,7 +26,7 @@ active_clients = {}
 async def register_user(websocket):
     registration_data = await websocket.recv()
     username, password = registration_data.split(',')
-
+    # TODO: move database connection and CRUD to a separate function
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('SELECT username FROM users WHERE username = ?', (username,))
@@ -46,6 +46,7 @@ async def register_user(websocket):
 async def authenticate(websocket):
     while True:
         auth_data = await websocket.recv()
+        # TODO: move to a separate function
         if auth_data.startswith("register"):
             username = await register_user(websocket)
             return username  # Return username for subsequent actions
@@ -79,6 +80,7 @@ async def handle_client(websocket, path):
             target_user = await websocket.recv()
             if target_user in active_clients:
                 # Send public keys
+                # TODO: server will not generate keys, only clients will
                 user_public_key = rsa.newkeys(512)[0].save_pkcs1(format='PEM')
                 target_websocket = active_clients[target_user]
 
