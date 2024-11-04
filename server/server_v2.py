@@ -89,30 +89,43 @@ async def handle_client(websocket, path):
     associate_user_with_client_id(username, client_id)
     print(f"{username} connected successfully!")
 
+    # try:
+    #     while True:
+    #         target_user = await websocket.recv()
+    #         if target_user in connected_users:
+    #             # Send public keys
+    #             # TODO: server will not generate keys, only clients will
+    #             user_public_key = rsa.newkeys(512)[0].save_pkcs1(format='PEM')
+    #             target_client = connected_users[target_user]
+    #             target_websocket = active_clients[target_client]
+
+    #             await websocket.send(base64.b64encode(user_public_key).decode())
+    #             target_websocket.send(base64.b64encode(user_public_key).decode())
+
+    #             # Chat loop
+    #             while True:
+    #                 message = await websocket.recv()
+    #                 encrypted_message = rsa.encrypt(message.encode('utf-8'), target_websocket.public_key)
+    #                 await target_websocket.send(encrypted_message)
+    #         else:
+    #             await websocket.send("Target user not found.")
+    # except websockets.exceptions.ConnectionClosed:
+    #     print(f"Client {client_id} disconnected.")
+    # finally:
+    #     del connected_users[client_id]
     try:
-        while True:
-            target_user = await websocket.recv()
-            if target_user in connected_users:
-                # Send public keys
-                # TODO: server will not generate keys, only clients will
-                user_public_key = rsa.newkeys(512)[0].save_pkcs1(format='PEM')
-                target_client = connected_users[target_user]
-                target_websocket = active_clients[target_client]
+        print("Waiting for messages ...")
+        print(f"Current websocket: {websocket}")
+        async for message in websocket:
 
-                await websocket.send(base64.b64encode(user_public_key).decode())
-                target_websocket.send(base64.b64encode(user_public_key).decode())
-
-                # Chat loop
-                while True:
-                    message = await websocket.recv()
-                    encrypted_message = rsa.encrypt(message.encode('utf-8'), target_websocket.public_key)
-                    await target_websocket.send(encrypted_message)
-            else:
-                await websocket.send("Target user not found.")
-    except websockets.exceptions.ConnectionClosed:
-        print(f"Client {client_id} disconnected.")
+            print(f"Received message from {username}")
+            # Broadcast the received message to all connected clients
+            for client in active_clients:
+                if active_clients[client] != websocket:  # Don't send the message back to the sender
+                    await active_clients[client].send(message)
     finally:
-        del connected_users[client_id]
+        # Unregister the client when done
+        del active_clients[client_id]
 
 async def main():
     server = await websockets.serve(handle_client, "localhost", 6789)
