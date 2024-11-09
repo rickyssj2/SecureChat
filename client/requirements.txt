@@ -1,6 +1,6 @@
 asyncio
 websockets
 rsa
-base64
 hashlib
 uuid
+aioconsole

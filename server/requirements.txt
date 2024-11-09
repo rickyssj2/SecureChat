@@ -1,6 +1,3 @@
 asyncio
 websockets
 sqlite3
-rsa
-base64
-hashlib

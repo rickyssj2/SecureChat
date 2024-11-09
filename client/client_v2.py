@@ -1,7 +1,4 @@
-import asyncio
 import websockets
-import rsa
-import base64
 import aioconsole
 import asyncio
 import hashlib
@@ -59,32 +56,11 @@ async def chat_client(client_id):
                     isAuthenticated = False
                     continue
                 isAuthenticated = True                
-            # TODO: Re-structure code to enable chatting
+            
             # Select target user
             if isAuthenticated:
-                # while True:
-                #     target_user = input("Enter the username of the client you want to chat with: ")
-                #     await websocket.send(target_user)
-                #     response = await websocket.recv()
-                #     #TODO: Try to build a protocol and a parser instead of sending strings,  OR atleast use error codes
-                #     if response == "Target user not found.":
-                #         print("Target user not found. The user is either inactive or no such user exists")
-                #         continue
-                #     break
-                # # TODO: Send encrypted messages to the server from the start
-                # # TODO: Don't ask for the server to send public keys, the initiator would send it's puclic keys
-                # # Receive public key
-                # public_key_data = await websocket.recv()
-                # public_key = rsa.PublicKey.load_pkcs1(base64.b64decode(public_key_data))
+                # Receive server public key
 
-                # while True:
-                #     message = input("Type your message (or 'exit' to quit): ")
-                #     if message.lower() == 'exit':
-                #         break
-                #     # TODO: Use RSA for sharing AES256 keys, symmetric encryption is faster and more compute efficient
-                #     encrypted_message = rsa.encrypt(message.encode('utf-8'), public_key)
-                #     await websocket.send(encrypted_message)
-                
                 # Start sending and receiving messages concurrently
                 send_task = asyncio.create_task(send_messages(websocket))
                 receive_task = asyncio.create_task(receive_messages(websocket))
