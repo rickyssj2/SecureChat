@@ -2,8 +2,22 @@ import asyncio
 import websockets
 import rsa
 import base64
+import aioconsole
+import asyncio
 import hashlib
 import uuid
+
+async def send_messages(websocket):
+    while True:
+        message = await aioconsole.ainput("You: ")  # Asynchronous input
+        await websocket.send(message)
+
+async def receive_messages(websocket):
+    while True:
+        response = await websocket.recv()
+        print(f"\r{' ' * 50}\rOther: {response}")  # Clear the line and print the message
+        # Reprint the input prompt
+        print("You: ", end='', flush=True)
 
 async def chat_client(client_id):
     #TODO: Define configuration in ENV variables
@@ -17,13 +31,13 @@ async def chat_client(client_id):
             # Choose action: register or login
             action = input("Type 'register' to create a new account or 'login' to access an existing one: ").strip().lower()
             if action == 'register':
-                await websocket.send("register")
+                await websocket.send("register") #TODO: Build a simple protocol for each event
                 while True:      
                     username = input("Enter your username: ")
                     password = input("Enter your password: ")
-                    password_hash = hashlib.sha256(password.encode()).hexdigest()
-                    await websocket.send(f"{username},{password_hash}")
-                    response = await websocket.recv()
+                    password_hash = hashlib.sha256(password.encode()).hexdigest() # Not storing password directly; collision is unlikely
+                    await websocket.send(f"{username},{password_hash}") #TODO: Build a simple protocol for each event
+                    response = await websocket.recv() #TODO: Build a simple protocol for each event
                     if response == "Username already taken. Please try another one.":
                         print(response)
                         continue                    
@@ -34,6 +48,7 @@ async def chat_client(client_id):
             elif action == 'login':
                 username = input("Enter your username: ")
                 password = input("Enter your password: ")
+                # Repeated code in register and login, create a function
                 password_hash = hashlib.sha256(password.encode()).hexdigest()
                 await websocket.send(f"{username},{password_hash}")
                 auth_response = await websocket.recv()
@@ -69,11 +84,13 @@ async def chat_client(client_id):
                 #     # TODO: Use RSA for sharing AES256 keys, symmetric encryption is faster and more compute efficient
                 #     encrypted_message = rsa.encrypt(message.encode('utf-8'), public_key)
                 #     await websocket.send(encrypted_message)
-                while True:
-                    message = input("You: ")
-                    await websocket.send(message)
-                    response = await websocket.recv()
-                    print(f"Other: {response}")
+                
+                # Start sending and receiving messages concurrently
+                send_task = asyncio.create_task(send_messages(websocket))
+                receive_task = asyncio.create_task(receive_messages(websocket))
+
+                # Wait for both tasks to finish (they won't, since they're infinite loops)
+                await asyncio.gather(send_task, receive_task)
 
 if __name__ == "__main__":
     client_id = str(uuid.uuid4())  # Generate a random UUID as client ID
