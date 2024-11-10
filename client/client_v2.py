@@ -23,9 +23,6 @@ async def check_target_presence(websocket, target_username):
     is_target_user_active = response.get('is_active', False)
     target_user_public_key = response.get('public_key')
     
-    print(f"Presence response: {response}")
-    print(f"Target user public key: {target_user_public_key if target_user_public_key else 'Unavailable'}")
-    
     # Return target details
     return is_target_user_active, target_user_public_key
 
@@ -77,17 +74,15 @@ async def send_messages(websocket, target_username, target_user_public_key, rsa_
             'message': base64_encrypted_message
         }))
 
-async def receive_messages(websocket, rsa_util):
+async def receive_messages(websocket, target_username, rsa_util):
     while True:
         response_json = await websocket.recv()
         response_data = json.loads(response_json)
-        # Get the Base64-encoded message
         encrypted_message_base64 = response_data['message']
-        # Decode the Base64 string back to bytes
         encrypted_message_bytes = base64.b64decode(encrypted_message_base64)
         # Decrypt the message with the recipient's private key
         decrypted_message = rsa_util.decrypt(encrypted_message_bytes)
-        print(f"\r{' ' * 50}\rOther: {decrypted_message}")  # Clear the line and print the message
+        print(f"\r{' ' * 50}\r{target_username}: {decrypted_message}")  # Clear the line and print the message
         # Reprint the input prompt
         print("You: ", end='', flush=True)
 
@@ -125,7 +120,7 @@ async def chat_client(client_id):
                         
                         # Start sending and receiving messages concurrently
                         send_task = asyncio.create_task(send_messages(websocket, target_username, target_user_public_key, rsa_util))
-                        receive_task = asyncio.create_task(receive_messages(websocket, rsa_util))
+                        receive_task = asyncio.create_task(receive_messages(websocket, target_username, rsa_util))
                         
                         # Wait for both tasks to finish
                         await asyncio.gather(send_task, receive_task)

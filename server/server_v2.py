@@ -41,15 +41,12 @@ async def check_presence(websocket, target_username, username):
     target_user_public_key = None
     if is_active:
         target_user_client_id = connected_users[target_username]
-        print(f"target user client id: {target_user_client_id}")
         target_user_public_key = active_clients[target_user_client_id]['public_key']
     await websocket.send(json.dumps({
         'action': 'check_presence_response',
         'is_active': is_active,
         'public_key': target_user_public_key
     }))
-    
-    print(f"targer user: {target_username}")
     return target_username
 
 async def register_user(websocket):
@@ -99,7 +96,6 @@ async def handle_client(websocket, path):
     client_init_json = await websocket.recv()
     client_init_data = json.loads(client_init_json)
     client_id = client_init_data['client_id']
-    print(f"client init data: {client_init_data}")
     # Register a new client
     if client_init_data['action'] == 'register_client':        
         client_public_key = client_init_data['public_key']
@@ -108,14 +104,12 @@ async def handle_client(websocket, path):
             'public_key': client_public_key
         }
         print(f"Client {client_id} connected.")
-        print(f"active clients: {active_clients}")
 
     # Authenticate user
     username = await authenticate(websocket)
     # TODO: users can connect with multiple devices, change data structure
     associate_user_with_client_id(username, client_id)
     print(f"{username} connected successfully!")
-    print(f"Connected clients: {connected_users}")
 
     try:
         print("Waiting for messages ...")
@@ -126,8 +120,7 @@ async def handle_client(websocket, path):
                 target_username = data['target_username']
                 await check_presence(websocket, target_username, username)
             elif data['action'] == 'send_encrypted_message':
-                print(f"Received message from {client_id}")
-
+                print(f"Received message from {username}")
                 # Send message to target_username
                 if target_username in connected_users:
                     client_id = connected_users[target_username]
