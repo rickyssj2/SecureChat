@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import sqlite3
+import json
 
 # Database setup
 def init_db():
@@ -31,6 +32,25 @@ def insert_user_in_db(username, password, conn):
 # Store active clients & connected users
 active_clients = {}
 connected_users = {}
+
+async def check_presence(websocket, target_username, username):
+    # Is target user active check
+    is_active = False  
+    if target_username in connected_users and target_username != username:
+        is_active = True
+    target_user_public_key = None
+    if is_active:
+        target_user_client_id = connected_users[target_username]
+        print(f"target user client id: {target_user_client_id}")
+        target_user_public_key = active_clients[target_user_client_id]['public_key']
+    await websocket.send(json.dumps({
+        'action': 'check_presence_response',
+        'is_active': is_active,
+        'public_key': target_user_public_key
+    }))
+    
+    print(f"targer user: {target_username}")
+    return target_username
 
 async def register_user(websocket):
     registration_data = await websocket.recv()
@@ -76,30 +96,46 @@ async def authenticate(websocket):
 
 async def handle_client(websocket, path):
     # Initiate encryption before sending any messages
-
+    client_init_json = await websocket.recv()
+    client_init_data = json.loads(client_init_json)
+    client_id = client_init_data['client_id']
+    print(f"client init data: {client_init_data}")
     # Register a new client
-    client_id = await websocket.recv()
-    active_clients[client_id] = websocket
-    print(f"Client {client_id} connected.")
+    if client_init_data['action'] == 'register_client':        
+        client_public_key = client_init_data['public_key']
+        active_clients[client_id] = {
+            'websocket': websocket,
+            'public_key': client_public_key
+        }
+        print(f"Client {client_id} connected.")
+        print(f"active clients: {active_clients}")
 
     # Authenticate user
     username = await authenticate(websocket)
     # TODO: users can connect with multiple devices, change data structure
     associate_user_with_client_id(username, client_id)
     print(f"{username} connected successfully!")
+    print(f"Connected clients: {connected_users}")
 
     try:
         print("Waiting for messages ...")
-        print(f"Current websocket: {websocket}")
         async for message in websocket:
+            data = json.loads(message)
 
-            print(f"Received message from {username}")
-            # Broadcast the received message to all connected clients
-            for client in active_clients:
-                if active_clients[client] != websocket:  # Don't send the message back to the sender
-                    await active_clients[client].send(message)
+            if data['action'] == 'check_presence':
+                target_username = data['target_username']
+                await check_presence(websocket, target_username, username)
+            elif data['action'] == 'send_encrypted_message':
+                print(f"Received message from {client_id}")
+
+                # Send message to target_username
+                if target_username in connected_users:
+                    client_id = connected_users[target_username]
+                    current_client = active_clients[client_id]
+                    await current_client['websocket'].send(message)
     finally:
         # Unregister the client when done
+        del connected_users[username]
         del active_clients[client_id]
 
 async def main():
