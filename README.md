@@ -4,13 +4,13 @@ A highly scalable, distributed, and end-to-end encrypted chat application built 
 
 ## 📜 Table of Contents
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Setup](#setup)
-- [Usage](#usage)
-- [Folder Structure](#folder-structure)
-- [Dependencies](#dependencies)
-- [Contributing](#contributing)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Setup](#-setup)
+- [Usage](#-usage)
+- [Folder Structure](#-folder-structure)
+- [Dependencies](#-dependencies)
+- [Contributing](#-contributing)
 
 ---
 
