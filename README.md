@@ -95,9 +95,10 @@ encrypted-chat-app/
  - sqlite: Used for lightweight data storage, such as user information and public keys.
 
 Install all dependencies by running
-    ```bash
+   ```bash
     pip install -r client/requirements.txt
     pip install -r server/requirements.txt
+   ```
 
 ## 🤝 Contributing
 Contributions are welcome! Feel free to submit a pull request to suggest improvements, fix bugs, or add features.
