@@ -12,7 +12,6 @@ A highly scalable, distributed, and end-to-end encrypted chat application built 
 - [Dependencies](#-dependencies)
 - [Contributing](#-contributing)
 
----
 
 ## ✨ Features
 
@@ -21,7 +20,6 @@ A highly scalable, distributed, and end-to-end encrypted chat application built 
 - **Presence Check**: Clients can check if a target user is online before a user can start sending messages.
 - **Scalable WebSocket-Based Communication**: Real-time message delivery over WebSockets.
 
----
 
 ## 🏛️ Architecture
 
@@ -42,7 +40,6 @@ The application follows a client-server architecture, with the server managing c
 
 > **Note**: The server only stores the public keys and handles message transmission; it cannot decrypt messages.
 
----
 
 ## 🚀 Setup
 
@@ -75,6 +72,7 @@ The application follows a client-server architecture, with the server managing c
  - Start Messaging: Begin exchanging encrypted messages with your friend. Messages will be encrypted locally by the sender and decrypted by the recipient, ensuring complete security.
 
 ## 📂 Folder Structure
+```
 encrypted-chat-app/
 ├── client                   
 │      ├── client_v2.py             # Client script
@@ -83,10 +81,10 @@ encrypted-chat-app/
 │      └── requirements.txt         # Python dependencies for client
 ├── server                
 │      ├── server_v2.py             # Server script
-│      ├── ... other versions       # v0 to v1.1 are incremental clients built for prototyping
+│      ├── ... other versions       # v0 to v1.1 are incremental servers built for prototyping
 │      └── requirements.txt         # Python dependencies for server
 └── README.md                # Project documentation
-
+```
 ## 📦 Dependencies
  - asyncio: Provides asynchronous I/O operations.
  - websockets: Enables WebSocket communication between clients and server.
